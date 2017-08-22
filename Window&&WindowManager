@@ -1,0 +1,5 @@
+Window是个抽象类，有且只有一个实现类PhoneWindow
+WindowManager是一个接口：public interface WindowManager extends ViewManager，实现类为：WindowManagerImpl 
+WindowManager用于操作Window，主要有三个操作：添加view、更新view、移除view；
+
+WindowManager与WindowManagerService之间交互：
