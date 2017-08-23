@@ -1,0 +1,22 @@
+（1）20170823：
+模板方法设计模式：
+定义一个操作中的算法框架，将一些步骤延迟到子类中实现。使得子类可以不改变一个算法的结构即可重新定义该算法的一些步骤。
+
+public abstract class AbstractClass{
+
+/*基础方法，总体逻辑的中间步骤*/
+abstract void doSomeThing();
+
+abstract void doAnyThing();
+
+/*模板方法*/
+public void templateMethod(){
+      /*
+      调用基本方法，实现总体逻辑
+      */
+      this.doSomeThing();
+      
+      this.doAnyThing();
+}
+
+子类继承AbstractClass，根据自己的需要实现两个基础方法。总体流程在模板方法中实现。
