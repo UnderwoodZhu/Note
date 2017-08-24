@@ -1,0 +1,151 @@
+（1）单一职责原则 
+Single Responsibility Principle（SRP）
+
+There should never be more than on reason for a class to change.
+定义：一个类只能由于一个原因引起变化，只能有一个职责。
+
+类、接口、方法都应该尽量遵守这个原则，每个类、接口、方法职责单一、明确，开发简单，维护容易，是个好习惯。
+类：
+接口：
+1、单一职责、只能有一个原因引起改变。
+方法：
+1、方法名明确：见名知意。
+2、功能单一：只完成一个功能。
+
+
+
+（2）里氏替换原则：
+Liskov Substitution Principle（LSP）
+
+针对面向对象中的继承机制。
+
+定义：所有引用父类的地方，都应该可以透明地使用子类对象。只要父类可以出现的地方，子类都可以出现。
+
+对设计提出的要求：
+
+1、子类必须实现父类的所有方法：
+
+如果子类不能完整地完成父类的所有业务逻辑，或者父类的某些方法的意义在子类中出现了较大的分歧，则要考虑不用继承关系，改用其他。
+例如：战争游戏中，有如下射击：
+士兵类：
+抽象的武器类：
+士兵对象组合了一个武器类，士兵的的杀敌方法中调用了武器对象的射击杀敌方法。
+
+我们继承这个抽象的武器类，实现各式各样的枪支供士兵使用。
+
+出现问题：如果我们继承这个武器类实现了一个玩具水枪，既然是玩具枪，那么父类中的射击杀敌方法就不能实现（玩具枪不能杀人）
+当我们将这个玩具枪对象传给了士兵对象，该士兵对象在调用杀敌方法时就会有问题。
+
+这个玩具枪就属于不能完整地实现武器类的方法。这是尽量避免使用继承关系。
+
+2、子类可以有自己的个性，与父类相区别。这也是继承的目的。
+这里的所谓里氏原则反过来是错误的，即子类出现的地方，父类不一定可以出现。
+
+3、覆盖或者实现父类的方法时，输入参数可以被放大，但是不能被缩小：
+
+方法的参数为：前置条件
+方法的返回值：后置条件
+
+下面例子中子类重载了父类的方法，而未覆写，方法参数的范围缩小（Map-->HashMap）。
+父类：
+public class Father{
+public Colection doSomeThing(Map map){
+System.out.println("Father");
+return map.values();
+}
+}
+子类：
+public class son extends Father{
+public Colection doSomeThing(HashMap map){
+System.out.println("Son");
+return map.values();
+}
+}
+
+场景类：
+public class Client{
+public static void main（String[]args）{
+invoker();
+}
+private void invoker(){
+Father f = new Father();
+HashMap map = new HashMap();
+f.doSomeThing(map);
+}
+}
+
+输出：Father
+
+根据里氏替换原则，将这里的Father对象换成Son对象：
+public class Client{
+public static void main（String[]args）{
+invoker();
+}
+private void invoker(){
+Son f = new Son();
+HashMap map = new HashMap();
+f.doSomeThing(map);
+}
+}
+
+输出：Father
+
+这里没有问题，符合里氏替换原则。
+
+
+当父类的方法的输入参数的范围比子类的小时：
+
+例如：
+父类：
+public class Father{
+
+public Colection doSomeThing(Hashmap map){
+System.out.println("Father");
+return map.values();
+}
+}
+子类：
+public class son extends Father{
+
+public Colection doSomeThing(Map map){
+System.out.println("Son");
+return map.values();
+}
+
+}
+子类重载了父类的doSomeThing方法，但是未覆写，方法参数的范围扩大（HashMap-->Map）。
+在下面父类的使用场景：
+场景类：
+public class Client{
+public static void main（String[]args）{
+invoker();
+}
+private void invoker(){
+Father f = new Father();
+HashMap map = new HashMap();
+f.doSomeThing(map);
+}
+}
+输出：Father
+
+如果此时使用里氏替换原则，将父类对象替换成子类对象：
+
+public class Client{
+public static void main（String[]args）{
+invoker();
+}
+private void invoker(){
+Son f = new Son();
+HashMap map = new HashMap();
+f.doSomeThing(map);
+}
+}
+
+输出：Son
+
+这里出现了逻辑错误，子类未覆写父类的方法，替换后理应调用父类的方法，这里却调用了子类的方法。
+违反了里氏替换原则。
+
+4、覆写或实现父类方法时输出结果可以被缩小：
+覆写的返回值、参数列表、方法名必须与父类一致
+重载的参数列表必须不同、方法名称一致、返回值类型可以不一样，但是不作为区分。
