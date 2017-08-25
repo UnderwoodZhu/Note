@@ -149,3 +149,19 @@ f.doSomeThing(map);
 4、覆写或实现父类方法时输出结果可以被缩小：
 覆写的返回值、参数列表、方法名必须与父类一致
 重载的参数列表必须不同、方法名称一致、返回值类型可以不一样，但是不作为区分。
+
+
+（3）依赖倒置原则
+Dependence Inversion Principle  DIP
+
+High level modules should not depend upon low level modules.Both should depend upon abstractions.
+Abstractions should not depend upon details.Details should depend upon abstraction.
+
+高层模块不应该依赖低层模块，模块都应该依赖抽象。
+抽象不能依赖细节。
+细节应该依赖抽象。
+
+java中的抽象与细节分别为：接口&抽象类、实现类。
+
+模块之间的依赖应该通过抽象，即接口与抽象类产生。
+
