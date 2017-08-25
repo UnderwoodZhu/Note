@@ -1,5 +1,7 @@
 分析这类问题从两个层面分析：语法层面与设计层面。
-参考：http://www.importnew.com/18780.html
+较好的博客：
+http://www.cnblogs.com/chenssy/p/3376708.html
+http://www.importnew.com/18780.html
 
 抽象类：
 抽象类是具有抽象方法的类。
