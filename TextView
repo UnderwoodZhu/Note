@@ -1,0 +1,120 @@
+TextView
+onDraw()
+1、restartMarqueeIfNeeded  与TextView的滚动重绘有关，跑马灯
+2、super.onDraw() 调用View的onDraw
+3、一波计算获取padding与位置的操作
+
+4、对mDrawables进行了处理，绘制drawable，上下左右四个drawable
+
+有个内部类：Drawables 用于TextView显示图片，里面适配了文字方向，RTL，LTR，提供了接口进行自适应显示调整。上下左右两个图。
+
+5、初始化mLayout：DynamicLayout StaticLayout
+
+6、颜色处理、drawable状态处理。
+
+7、裁剪尺寸
+
+8、处理canvas
+
+9、看是否是MARQUEE，即跑马灯。处理canvas。
+
+10、高亮处理
+
+11、绘制，可编辑的与不可编辑的走两个流程。
+
+********
+canvas看下：
+画东西时：1、Bitmap to hold pixel. （管理像素，颜料？）2、Canvas to host draw calls （进行绘制）3、drawing primative （画啥）4、paint(笔)
+*******
+
+Hint 空TextView时显示的text
+HighLight 选中高亮相关
+
+
+assumeLayout
+——makeNewLayout:
+————makeSingleLayout
+
+TextView 、Layout 、StaticLayout、 TextLine
+
+TextLine 一行字串
+
+
+
+
+******************************
+绘制流程
+1、Layout draw
+2、Layout drawBackground
+3、Layout drawText
+4、初始化一些值：
+  1、获取第一行的最后一个字符 -->进入StaticLayout的getLineStart()
+  2、获取第一行的位置
+5、开始一行一行的绘制
+*********************************
+
+1、StaticLayout.getLineStart
+2、找到mLines的初始化流程：构造方法初始化
+3、calculateEllipsis中对mLines进行赋值
+
+***********************************
+generate()分行
+
+LineBreaks
+
+
+
+StaticLayout.generate  nSetupParagraph()
+
+minikin::LineBreaker  setStrategy()
+
+
+android_text_StaticLayout::nComputeLineBreaks
+
+调用了计算断行：
+minikin::computeBreaks()  StaticLayout传入的是一个LineBreaks，里面是三个数组：断行数组、行宽数组、flag
+
+android_text_StaticLayout::recycleCopy 返回数据
+
+minikin  libminikin.so
+
+
+*****************
+minikin--->size_t LineBreaker::computeBreaks()
+如果是kBreakStrategy_Greedy即simple，走到computeBreaksGreedy()
+否则走到 computeBreaksOptimal(mLineWidths.isConstant());
+先来：
+ computeBreaksOptimal(mLineWidths.isConstant());函数名：计算最优的断行
+
+1、shortLineFactor = mJustified ? 0.75f : 0.5f; mJustified =true即mJustificationMode ！= JUSTIFICATION_MODE_NONE
+针对短行增加的一个参数。 Android O增加。
+2、maxShrink = mJustified ? SHRINKABILITY * getSpaceWidth() : 0.0f;
+最大收缩量
+3、LineBreaker::getSpaceWidth() 获取空白的宽度，收缩是收缩词之间空白的宽度
+
+4、一个循环：
+mCandidates是什么？
+Candidate在LineBreak.h中定义的一个结构体，表示一个断行点
+LineWidthsLineBreak.h中的一个内部类，表示一行的宽度
+
+这里遍历一行的文字，寻找断行处
+
+两个循环，分别确定一行的第一个与最后一个字符
+
+
+leftEdge = mCandidates[i].postBreak - width;  该断行点text的总长度减去一行的长度，即这一行前面一共有多少
+
+float delta = mCandidates[j].preBreak - leftEdge;  寻找该行第一个字符的过程，从0开始，在断点前进行遍历，这里对比的是距离断点是否是一行的宽度
+
+5、nCand是Candidates的数量，即text一共有多少个可断行的点
+
+记录是否到了最后一个点，atEnd
+
+一个值bestHope，记录一个点是否合适？
+
+widthScore ：
+            // compute width score for line
+
+            // Note: the "bestHope" optimization makes the assumption that, when delta is
+            // non-negative, widthScore will increase monotonically as successive candidate
+            // breaks are considered.
