@@ -1,0 +1,107 @@
+一、TextView与Editor的原生的流程如下：
+
+流程如下：ActionMode的流程：
+
+Editor 中内部类TextActionModeCallback实现了ActionMode.callback2
+
+startInsertionActionMode（） 创建了上面内部类的对象，传递给TextView，类型为FloatingToolBar
+
+InsertionHandleView 调用上面的方法，表示一个handle，应该是可拖动的那个“把手”
+
+组合在InsertionPointCursorController中
+
+SelectionModifierCursorController 与InsertionPointCursorController两种模式
+
+CursorController 接口，控制光标
+
+ViewTreeObserver 监听view tree的变化
+
+SuggestionsPopupWindow 一个内部的window
+
+PinnedPopupWindow 一个抽象类，上面实现了这个  mContentView
+
+@@@@@@@@@@@@
+FloatingToolBar：
+
+mTextActionMode是一个FloatingToolBar类型的ActionMode
+通过获得mTextView.startActionMode
+
+
+这个最终走到了DecorView的startActionModeForChild，创建了一个FloatingToolBar
+
+在decorview中：
+setHandledFloatingActionMode穿件FloatingToolBar
+setHandledActionMode调上面
+startActionMode调上面
+
+@@@@@@@@@@@
+绝壁是FloatingActionMode.java这个类控制的
+
+在decorView的  createFloatingActionMode中创建
+createActionMode调上面
+startActionMode调上面
+@@@@@@@@@@@@@@@@
+
+DecorView.java 
+setHandledFloatingActionMode  new了一个FloatingToolBar
+在startActionMode调用
+在startActionModeForChild中调用
+
+
+view的startActionMode中走到了parent.startActionModeForChild，即调用了DecorView的这个方法
+创建了这个FloatingToolBar
+
+
+些选项是谁加进去的？
+
+onCreateContextMenu 这个方法加入？
+应用如何定制？
+
+textView 中的 setCustomSelectionActionModeCallback
+自定义剪切板布局
+http://blog.csdn.net/jiang_rong_tao/article/details/61919364
+
+
+分析FloatingToolBar，何时有按钮？
+overflow相关的一些。
+FloatingToolbarPopup 内部类，管理mainpanel与overflowpanel
+
+定制了mainpanel，自己加一个overflowpanel？
+
+插入与选择是分开的两个，留意。
+
+1、FloatingToolBar的原始流程
+主要逻辑在下面的内部类中：
+FloatingToolbarPopup
+
+* This class is responsible for the rendering/animation of the floating toolbar.
+* It holds 2 panels (i.e. main panel and overflow panel) and an overflow button
+* to transition between panels.
+
+layoutMainPanelItems 这个方法找出了需要在mainpanel中显示的icon
+然后返回需要在overflow中显示的icon
+
+getAdjustedToolbarWidth 获取出mainpanel的宽度
+
+有一个最大的宽度限制：floating_toolbar_preferred_width 328dp
+
+上面两个都是从这里触发的：layoutMenuItems(）
+
+
+给动画里的值多加一点，应该就可以了。
+
+
+setWidth使用setWidth，代替setMinmumWidth
+
+mSuggestedWidth可以在FloatingToolBar中的setSuggestedWidth设置
+
+默认的值是在getAdjustedToolbarWidth中得到。
+
+最终是R.dimen.floating_toolbar_preferred_width这个值。
+计算高度overflowpanel的高度：
+
+updateOverflowHeight与updateOverflowHeight两个地方
+
+overflowbutton低级前后的宽高在哪里控制？
+
+mIsOverflowOpen标志位，是否打开了overflow
