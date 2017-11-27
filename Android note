@@ -1,0 +1,15 @@
+1、Android O资源编译问题
+已 import com.android.internal.R；
+但是在framework/base 下使用：context.getResources().getDimensionPixelSize(com.android.internal.R.dimen.xxxx);会报错：xxxx cannot be resolved or is not a field。
+
+原因：framework\base\core\res\res\values\symbols.xml中使用<java-symbol type="XXX" name="account_name" />方式，对可以在Java代码中引用的资源
+进行声明，不在这里的不可以在Java代码中使用。
+
+官方描述：
+<!-- Private symbols that we need to reference from framework code.  See
+       frameworks/base/core/res/MakeJavaSymbols.sed for how to easily generate
+       this.
+
+       Can be referenced in java code as: com.android.internal.R.<type>.<name>
+       and in layout xml as: "@*android:<type>/<name>"
+  -->
