@@ -105,3 +105,18 @@ updateOverflowHeight与updateOverflowHeight两个地方
 overflowbutton低级前后的宽高在哪里控制？
 
 mIsOverflowOpen标志位，是否打开了overflow
+
+
+
+自定义剪切板：
+TextView中的接口：
+setCustomSelectionActionModeCallback
+
+在Editor的TextActionModeCallback中的一系列操作中会调用这个玩意儿：
+private Callback getCustomCallback() {
+            return mHasSelection
+                    ? mCustomSelectionActionModeCallback
+                    : mCustomInsertionActionModeCallback;
+        }
+        
+ 如果可以获取得到，就不会走系统的流程。
