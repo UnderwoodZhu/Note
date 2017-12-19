@@ -127,3 +127,68 @@ TextView中的方法：
         return getBaseContext().getSystemService(name);
     }
     走到：ContextWrapper.java
+
+     最终走到了：ContextImpl.java中
+      @Override
+    public Object getSystemService(String name) {
+        return SystemServiceRegistry.getSystemService(this, name);
+    }
+    
+    SystemServiceRegistry.java中
+    
+    /**
+ * Manages all of the system services that can be returned by {@link Context#getSystemService}.
+ * Used by {@link ContextImpl}.
+ */
+    
+    **
+     * Gets a system service from a given context.
+     */
+    public static Object getSystemService(ContextImpl ctx, String name) {
+        ServiceFetcher<?> fetcher = SYSTEM_SERVICE_FETCHERS.get(name);
+        return fetcher != null ? fetcher.getService(ctx) : null;
+    }
+    
+    内部接口：
+    /**
+     * Base interface for classes that fetch services.
+     * These objects must only be created during static initialization.
+     */
+    static abstract interface ServiceFetcher<T> {
+        T getService(ContextImpl ctx);
+    }
+    
+     /**
+     * Override this class when the system service constructor needs a
+     * ContextImpl and should be cached and retained by that context.
+     */
+    static abstract class CachedServiceFetcher<T> implements ServiceFetcher<T> {
+        private final int mCacheIndex;
+
+        public CachedServiceFetcher() {
+            mCacheIndex = sServiceCacheSize++;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public final T getService(ContextImpl ctx) {
+            final Object[] cache = ctx.mServiceCache;
+            synchronized (cache) {
+                // Fetch or create the service.
+                Object service = cache[mCacheIndex];
+                if (service == null) {
+                    try {
+                        service = createService(ctx);
+                        cache[mCacheIndex] = service;
+                    } catch (ServiceNotFoundException e) {
+                        onServiceNotFound(e);
+                    }
+                }
+                return (T)service;
+            }
+        }
+
+        public abstract T createService(ContextImpl ctx) throws ServiceNotFoundException;
+    }
+    
+    上面有一个static块，进行Services的create
