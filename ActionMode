@@ -1,3 +1,15 @@
+FloatingToolBar的流程：
+TextView.java  performLongClick -->
+Editor.java    performlongClick--> startInsertionActionMode(){mTextView.startActionMode}
+
+TextView.java  startActionMode-->
+
+View.java     startActionMode(）--> getParents().startActionModeForChild
+
+DecorView.java  startActionModeForChild()--> startActionMode()-->createActionMode()-->createFloatingActionMode()-->mFloatingToolbar = new FloatingToolbar(mContext, mWindow);
+
+
+
 一、TextView与Editor的原生的流程如下：
 
 流程如下：ActionMode的流程：
