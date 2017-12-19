@@ -1,0 +1,129 @@
+（1）入口
+TextView中的方法：
+/**
+     * Paste clipboard content between min and max positions.
+     */
+    private void paste(int min, int max, boolean withFormatting) {
+        ClipboardManager clipboard =
+                (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = clipboard.getPrimaryClip();
+        if (clip != null) {
+            boolean didFirst = false;
+            for (int i = 0; i < clip.getItemCount(); i++) {
+                final CharSequence paste;
+                if (withFormatting) {
+                    paste = clip.getItemAt(i).coerceToStyledText(getContext());
+                } else {
+                    // Get an item as text and remove all spans by toString().
+                    final CharSequence text = clip.getItemAt(i).coerceToText(getContext());
+                    paste = (text instanceof Spanned) ? text.toString() : text;
+                }
+                if (paste != null) {
+                    if (!didFirst) {
+                        Selection.setSelection((Spannable) mText, max);
+                        ((Editable) mText).replace(min, max, paste);
+                        didFirst = true;
+                    } else {
+                        ((Editable) mText).insert(getSelectionEnd(), "\n");
+                        ((Editable) mText).insert(getSelectionEnd(), paste);
+                    }
+                }
+            }
+            sLastCutCopyOrTextChangedTime = 0;
+        }
+    }
+    
+    通过ClipboardManager clipboard =(ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+    获取到剪切板服务
+    （2）getContext() 调用的是父类View.java的方法：
+    @ViewDebug.CapturedViewProperty
+    public final Context getContext() {
+        return mContext;
+    }
+    构造方法中对这个从context进行了初始化
+    
+    Activity中调用
+    Activity.java
+    setContentView（id）-->
+     public void setContentView(@LayoutRes int layoutResID) {
+        getWindow().setContentView(layoutResID);
+        initWindowDecorActionBar();
+    }
+    
+     public Window getWindow() {
+        return mWindow;
+    }
+    
+     mWindow = new PhoneWindow(this, window, activityConfigCallback);
+     
+     PhoneWindow.java
+      @Override
+    public void setContentView(int layoutResID) {
+    。。。。。。
+         mLayoutInflater.inflate(layoutResID, mContentParent);
+    。。。。。
+    }
+    其中：
+    public PhoneWindow(Context context) {
+        super(context);
+        mLayoutInflater = LayoutInflater.from(context);
+    }
+    即这里的context是activity本身，即view的context是activity
+    @@@@@@@@@@@@@@@@@@@@@@
+    findViewById():
+    @Nullable
+    public <T extends View> T findViewById(@IdRes int id) {
+        return getWindow().findViewById(id);
+    }
+    
+     public Window getWindow() {
+        return mWindow;
+    }
+    
+    mWindow = new PhoneWindow(this, window, activityConfigCallback);
+    
+    最终是Window.java中的：
+    @Nullable
+    public <T extends View> T findViewById(@IdRes int id) {
+        return getDecorView().findViewById(id);
+    }
+
+    DecorView.java中
+    最终走到View.java
+     @Nullable
+    public final <T extends View> T findViewById(@IdRes int id) {
+        if (id == NO_ID) {
+            return null;
+        }
+        return findViewTraversal(id);
+    }
+    （3）getSystemService()
+    Activity.java
+    @Override
+    public Object getSystemService(@ServiceName @NonNull String name) {
+        if (getBaseContext() == null) {
+            throw new IllegalStateException(
+                    "System services not available to Activities before onCreate()");
+        }
+
+        if (WINDOW_SERVICE.equals(name)) {
+            return mWindowManager;
+        } else if (SEARCH_SERVICE.equals(name)) {
+            ensureSearchManager();
+            return mSearchManager;
+        }
+        return super.getSystemService(name);
+    }
+    
+    走到父类ContextThemeWrapper.java
+     @Override
+    public Object getSystemService(String name) {
+        if (LAYOUT_INFLATER_SERVICE.equals(name)) {
+            if (mInflater == null) {
+                mInflater = LayoutInflater.from(getBaseContext()).cloneInContext(this);
+            }
+            return mInflater;
+        }
+        return getBaseContext().getSystemService(name);
+    }
+    走到：ContextWrapper.java
