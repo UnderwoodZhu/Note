@@ -192,3 +192,17 @@ TextView中的方法：
     }
     
     上面有一个static块，进行Services的create
+ 
+ 
+ 其中一段：
+  registerService(Context.CLIPBOARD_SERVICE, ClipboardManager.class,
+                new CachedServiceFetcher<ClipboardManager>() {
+            @Override
+            public ClipboardManager createService(ContextImpl ctx) throws ServiceNotFoundException {
+                return new ClipboardManager(ctx.getOuterContext(),
+                        ctx.mMainThread.getHandler());
+            }});
+            // The clipboard service moved to a new package.  If someone asks for the old
+        // interface by class then we want to redirect over to the new interface instead
+        // (which extends it).
+        SYSTEM_SERVICE_NAMES.put(android.text.ClipboardManager.class, Context.CLIPBOARD_SERVICE);
