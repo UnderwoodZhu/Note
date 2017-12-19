@@ -206,3 +206,9 @@ TextView中的方法：
         // interface by class then we want to redirect over to the new interface instead
         // (which extends it).
         SYSTEM_SERVICE_NAMES.put(android.text.ClipboardManager.class, Context.CLIPBOARD_SERVICE);
+        
+        
+    创建ClipBoardManager对象之后，AIDL的一堆流程拉起了 ClipManagerService
+    ClipBoardManager.java
+    mService = IClipboard.Stub.asInterface(
+                ServiceManager.getServiceOrThrow(Context.CLIPBOARD_SERVICE));
