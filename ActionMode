@@ -1,3 +1,93 @@
+2018-01-20
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@20180120 begin
+传入了Editor中的，内部类的对象
+1、
+Editor中的
+startInsertionActionMode(){
+
+ ActionMode.Callback actionModeCallback =
+                new TextActionModeCallback(false /* hasSelection */);
+
+ mTextActionMode = mTextView.startActionMode(
+                actionModeCallback, ActionMode.TYPE_FLOATING);
+
+}
+
+
+private class TextActionModeCallback extends ActionMode.Callback2
+这里定义了供回调的方法，进行添加“复制”、“粘贴”等条目
+
+2、
+TextView中的startActionMode，调到View.java中
+
+3、
+View.java
+
+startActionMode(){
+parent.startActionModeForChild()
+}
+
+4、DecorView.java
+startActionModeForChild()  --> startActionMode()--> createActionMode()-->createFloatingActionMode()
+
+startActionMode(){
+。。。。
+ mode = createActionMode(type, wrappedCallback, originatingView);
+           if (mode != null && wrappedCallback.onCreateActionMode(mode, mode.getMenu())) {
+                setHandledActionMode(mode);
+            } else {
+                mode = null;
+            }
+。。。。
+}
+
+
+private ActionMode createActionMode(int type, ActionMode.Callback2 callback, View originatingView){}
+
+private ActionMode createFloatingActionMode(View originatingView, ActionMode.Callback2 callback) {}  //创建FloatingToolBarActionMode对象
+
+
+创建完ActionMode之后，wrappedCallback.onCreateActionMode进行了数据的初始化，“复制”、“粘贴”、“剪切”按钮的添加
+
+在StartActionMode()方法继续走下去：setHandledActionMode(ActionMode mode) -->  setHandledFloatingActionMode(mode)
+
+
+
+private void setHandledFloatingActionMode(ActionMode mode) {
+mFloatingActionMode = mode;
+mFloatingActionMode.invalidate();  // Will show the floating toolbar if necessary.
+mFloatingActionModeOriginatingView.getViewTreeObserver().addOnPreDrawListener(mFloatingToolbarPreDrawListener);
+
+}
+
+4、进入FloatingToolBarActionMode.java
+
+public void invalidate() {
+mCallback.onPrepareActionMode(this, mMenu);
+invalidateContentRect();
+}
+
+public void invalidateContentRect() {
+mCallback.onGetContentRect(this, mOriginatingView, mContentRect);
+repositionToolbar();
+}
+
+
+private void repositionToolbar(){
+
+
+mFloatingToolbarVisibilityHelper.updateToolbarVisibility();
+
+}
+
+5、内部类：FloatingToolbarVisibilityHelper
+updateToolbarVisibility(){
+mToolbar.show();
+}
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@20180120 END
+
+
+
 FloatingToolBar的流程：
 TextView.java  performLongClick -->
 Editor.java    performlongClick--> startInsertionActionMode(){mTextView.startActionMode}
