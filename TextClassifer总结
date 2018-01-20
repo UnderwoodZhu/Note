@@ -1,0 +1,9 @@
+https://source.android.com/devices/tech/display/textclassifier
+
+在智能选择的过程中：系统会通过LocaleList.getAdjustedDefault()获取一个locale list。
+然后将这个list与手机目录下的etc/textclassifier下的配置文件进行匹配。
+
+若匹配成功，继续下面的流程。
+若匹配失败，抛出异常，终止下面的操作，该功能无效。
+
+TextClassifier 神经网络模型的加载更新是由com.google.android.configupdater （ConfigUpdater.apk）完成。
