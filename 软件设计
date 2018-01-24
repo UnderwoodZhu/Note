@@ -1,0 +1,10 @@
+1、设计抽象类时，可以使用这种方式：
+public void createXXXX(){
+//共性操作
+onCreateXXXX()//子类特有的操作
+//共性操作
+}
+
+public abstract void onCreateXXXX();//具体场景下的操作规定子类完成。
+
+共性操作在父类createXXXX()中完成
