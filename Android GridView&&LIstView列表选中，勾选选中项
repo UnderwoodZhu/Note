@@ -1,0 +1,120 @@
+问题：GridView与ListView中需要选中单个或者多个item，并显示一个勾，表示选中状态。
+1、AbsListView中：onTouchEvent-->onTouchUp-->performItemClick-->updateOnScreenCheckedViews-->
+          if (child instanceof Checkable) {
+                ((Checkable) child).setChecked(mCheckStates.get(position));
+            } else if (useActivated) {
+                child.setActivated(mCheckStates.get(position));
+            }
+  这一套流程说明，如果我们的item实现了Checkable接口，那么在列表对象设置了CHOICE_MODE_MULTIPLE或者CHOICE_MODE_SINGLE之后，点击时，会调用其setChecked
+  方法。
+  
+  2、item实现Checkable接口：代码来自博客：https://juejin.im/entry/587484dd61ff4b005c538819
+  
+  public class CheckableLayout extends RelativeLayout implements Checkable {
+    private static final int[] CHECKED_STATE_SET = {android.R.attr.state_checked};
+    private boolean mChecked;
+    public CheckableLayout(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+    @Override
+    public void setChecked(boolean b) {
+        if (b != mChecked){
+            mChecked = b;
+            refreshDrawableState();
+        }
+    }
+    @Override
+    public boolean isChecked() {
+        return mChecked;
+    }
+    @Override
+    public void toggle() {
+        setChecked(!mChecked);
+    }
+    @Override
+    protected int[] onCreateDrawableState(int extraSpace) {
+        final int[] drawableState = super.onCreateDrawableState(extraSpace + 1);
+        if (isChecked()) mergeDrawableStates(drawableState, CHECKED_STATE_SET);
+        return drawableState;
+    }
+}
+其中实现Checkable的三个方法，重载了View.java的onCreateDrawaableState方法。
+（1）setChecked()
+该方法将被父View调用，这里实现实现主要逻辑：新旧状态不一致的话，调用refreshDrawableState()
+（2）重载onCreateDrawaableState方法。
+分析：
+
+为什么要在setChecked方法中调用refreshDrawableState()?
+
+refreshDrawableState()是View.java的方法，调用这个方法来更新Drawable的状态：
+ /**
+     * Call this to force a view to update its drawable state. This will cause
+     * drawableStateChanged to be called on this view. Views that are interested
+     * in the new state should call getDrawableState.
+     *
+     * @see #drawableStateChanged
+     * @see #getDrawableState
+     */
+    public void refreshDrawableState() {
+        mPrivateFlags |= PFLAG_DRAWABLE_STATE_DIRTY;
+        drawableStateChanged();
+
+        ViewParent parent = mParent;
+        if (parent != null) {
+            parent.childDrawableStateChanged(this);
+        }
+    }
+    
+    其实可以参考View.java中已实现的setPressed方法，该方法用来处理View被press。其中也是调用了refreshDrawableState()去更新相关drawable的状态
+     /**
+     * Sets the pressed state for this view.
+     *
+     * @see #isClickable()
+     * @see #setClickable(boolean)
+     *
+     * @param pressed Pass true to set the View's internal state to "pressed", or false to reverts
+     *        the View's internal state from a previously set "pressed" state.
+     */
+    public void setPressed(boolean pressed) {
+        final boolean needsRefresh = pressed != ((mPrivateFlags & PFLAG_PRESSED) == PFLAG_PRESSED);
+
+        if (pressed) {
+            mPrivateFlags |= PFLAG_PRESSED;
+        } else {
+            mPrivateFlags &= ~PFLAG_PRESSED;
+        }
+
+        if (needsRefresh) {
+            refreshDrawableState();
+        }
+        dispatchSetPressed(pressed);
+    }
+    
+    
+为什么要重载onCreateDrawableState方法？
+
+
+在View.java中
+refreshDrawableState-->drawableStateChanged-->getDrawableState-->onCreateDrawableState
+通过这一个流程去获取Drawable的状态信息，以下onCreateDrawableState中处理了VIEW_STATE_PRESSED、VIEW_STATE_ENABLED、VIEW_STATE_FOCUSED
+VIEW_STATE_SELECTED、VIEW_STATE_WINDOW_FOCUSED、VIEW_STATE_ACTIVATED、VIEW_STATE_HOVERED等StateSet.java中的属性，可以看到里面没有Checked
+所以需要重载onCreateDrawableState，加上这个属性。
+加上之后，在更新Drawable状态时，就可以使用checked这个属性了。
+ /**
+     * Generate the new {@link android.graphics.drawable.Drawable} state for
+     * this view. This is called by the view
+     * system when the cached Drawable state is determined to be invalid.  To
+     * retrieve the current state, you should use {@link #getDrawableState}.
+     *
+     * @param extraSpace if non-zero, this is the number of extra entries you
+     * would like in the returned array in which you can place your own
+     * states.
+     *
+     * @return Returns an array holding the current {@link Drawable} state of
+     * the view.
+     *
+     * @see #mergeDrawableStates(int[], int[])
+     */
+    protected int[] onCreateDrawableState(int extraSpace){}
+
+
