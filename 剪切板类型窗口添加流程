@@ -1,0 +1,96 @@
+直接设置窗口类型为输入法类型：getWindow().setType(WindowManager.LayoutParams.TYPE_INPUT_METHOD);
+运行时报错，因为WMS在添加该类型窗口时，会验证windowtoken是否存在。
+这里验证不通过，WMS返回WindowManagerGlobal.ADD_BAD_APP_TOKEN或WindowManagerGlobal.ADD_BAD_SUBWINDOW_TOKEN
+最后抛出WindowManager.BadTokenException异常。
+
+
+验证过程：
+1、异常调用栈如下：
+02-28 09:46:57.316 10275 10275 E Zygote  : android.view.WindowManager$BadTokenException: Unable to add window -- token null is not valid; is your activity running?
+02-28 09:46:57.316 10275 10275 E Zygote  : 	at android.view.ViewRootImpl.setView(ViewRootImpl.java:785)
+02-28 09:46:57.316 10275 10275 E Zygote  : 	at android.view.WindowManagerGlobal.addView(WindowManagerGlobal.java:356)
+02-28 09:46:57.316 10275 10275 E Zygote  : 	at android.view.WindowManagerImpl.addView(WindowManagerImpl.java:94)
+02-28 09:46:57.316 10275 10275 E Zygote  : 	at android.app.Dialog.show(Dialog.java:348)
+
+ViewRootImpl.setView --> Session.addToDisplay --> WindowManagerService.addWindow
+
+2、WindowManagerService.addWindow中：
+获取WindowToken
+
+          final DisplayContent displayContent = mRoot.getDisplayContentOrCreate(displayId);
+          WindowToken token = displayContent.getWindowToken(
+                    hasParent ? parentWindow.mAttrs.token : attrs.token);
+                           
+           if (token == null) {
+                if (rootType == TYPE_INPUT_METHOD) {
+                    Slog.w(TAG_WM, "Attempted to add input method window with unknown token "
+                          + attrs.token + ".  Aborting.");
+                    return WindowManagerGlobal.ADD_BAD_APP_TOKEN;
+                }
+                }
+3、DisplayContent.getWindowToken 
+WindowToken getWindowToken(IBinder binder) {
+        return mTokenMap.get(binder);
+    }
+4、输入法服务如何添加窗口？
+/*
+*Display.java
+*DEFAULT_DISPLAY = 0;
+*/
+
+
+InputMethodManagerService.java:
+
+IBinder mCurToken;
+
+InputMethodManagerService.startInputInnerLocked(){
+   mCurToken = new Binder();
+   mIWindowManager.addWindowToken(mCurToken, TYPE_INPUT_METHOD, DEFAULT_DISPLAY);
+}
+
+InputMethodManagerService.unbindCurrentMethodLocked(boolean savePosition){
+  mIWindowManager.removeWindowToken(mCurToken, DEFAULT_DISPLAY);
+  mCurToken = null;
+}
+
+5、addWindowToken流程
+WindowManagerService.addWindowToken
+    @Override
+    public void addWindowToken(IBinder binder, int type, int displayId) {
+        if (!checkCallingPermission(MANAGE_APP_TOKENS, "addWindowToken()")) {
+            throw new SecurityException("Requires MANAGE_APP_TOKENS permission");
+        }
+
+        synchronized(mWindowMap) {
+            final DisplayContent dc = mRoot.getDisplayContentOrCreate(displayId);
+            WindowToken token = dc.getWindowToken(binder);
+            if (token != null) {
+                Slog.w(TAG_WM, "addWindowToken: Attempted to add binder token: " + binder
+                        + " for already created window token: " + token
+                        + " displayId=" + displayId);
+                return;
+            }
+            if (type == TYPE_WALLPAPER) {
+                new WallpaperWindowToken(this, binder, true, dc,
+                        true /* ownerCanManageAppTokens */);
+            } else {
+                new WindowToken(this, binder, type, true, dc, true /* ownerCanManageAppTokens */);
+            }
+        }
+    }
+    （1）首先检查权限：MANAGE_APP_TOKENS；
+    （2）检查是否重复添加
+    （3）根据窗口类型，创建WallpaperWindowToken or WindowToken
+    （4）WinToken的构造函数：WindowToken（）--> onDisplayChanged（DisplayContent dc）-->DisplayContent.reParentWindowToken（WindowToken）
+    -->addWindowToken(IBinder binder, WindowToken token){  mTokenMap.put(binder, token);}
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
